@@ -31,7 +31,8 @@ infos_clients = infos_clients.reset_index()
 situtation_fin = situtation_fin.reset_index()
 
 # Filtre sur les 2 dernieres années
-credit_balance=credit_balance.loc[credit_balance['MONTHS_BALANCE'] > -24]
+#credit_balance=credit_balance.loc[credit_balance['MONTHS_BALANCE'] > -24]
+
 
 # liste des numéros clients
 sk_id = data_dash['SK_ID_CURR'].unique()
@@ -148,7 +149,7 @@ app.layout = html.Div([
 				]),	
 
 				html.Div(id='balance_mensuelle_graph')
-			]),
+			]),		
 		], className="pretty_container one-third column"),
 
 
@@ -257,7 +258,7 @@ def update_figure(selected_sk_id):
     return dcc.Graph(
 		id='balance_mensuelle',
 		figure={
-			'data':[{'x': filtered_df['MONTHS_BALANCE'], 'y' : filtered_df['AMT_BALANCE'], 'type': 'bar'}],
+			'data':[{'x': filtered_df['MONTHS_BALANCE'], 'y' : filtered_df['AMT_BALANCE'], 'type': 'bar', "marker": {"color": "#a81e1e"}}],
 			'layout' : {
     			'title' : 'Balance mensuelle',
     			'xaxis':{
@@ -270,7 +271,6 @@ def update_figure(selected_sk_id):
 		}
 	)
 
-	# A lire : https://plot.ly/python/creating-and-updating-figures/
 
 # MAJ du score
 @app.callback(Output('score', 'children'),
@@ -285,16 +285,6 @@ def update_score(selected_sk_id, montant_souhaite, revenu):
 	score = score.round(2)
 
 	return score
-
-
-# MAJ du score
-# @app.callback(Output('score', 'children'),
-#               [Input('sk_id', 'value')])
-# def update_score(sk_id_filter):
-# 	score = data_dash.loc[data_dash['SK_ID_CURR'] == sk_id_filter, 'TARGET_SCORE']
-
-# 	return score 
-
 
 # Affichage de la tranche d'age du RangeSlider
 @app.callback(Output('output_RangeSlider_age', 'children'),
