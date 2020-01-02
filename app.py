@@ -38,8 +38,8 @@ situtation_fin = situtation_fin.reset_index()
 sk_id = data_dash['SK_ID_CURR'].unique()
 
 # plot histogrammes généraux
-fig = px.histogram(data_dash, x="AMT_INCOME_TOTAL")
-fig_2 = px.histogram(data_dash, x="DAYS_EMPLOYED_YEARS")
+fig = px.histogram(data_dash, x="AMT_INCOME_TOTAL", color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
+fig_2 = px.histogram(data_dash, x="DAYS_EMPLOYED_YEARS", color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
 
 # load the scoring-model from disk
 loaded_model = pickle.load(open('C:/Users/Yop1001/Documents/Cours OC/Parcours Data Scientist/Projet 7 - Implémentez un modèle de scoring/finalized_model.sav', 'rb'))
@@ -49,7 +49,6 @@ final_df_modelisation = pd.read_csv('C:/Users/Yop1001/Documents/Cours OC/Parcour
 
 
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app = dash.Dash()
@@ -187,6 +186,7 @@ app.layout = html.Div([
 				html.H2('Notation'),
 				html.H3(id='score')
 			])
+
 		], className="pretty_container one-third column"),	
 
 		# Bloc niveau 2 - colonne droite
@@ -217,7 +217,7 @@ app.layout = html.Div([
 			]),
 
 			html.Div([
-				dcc.Graph(id = 'hist_revenu', figure = fig),
+				dcc.Graph(id = 'hist_revenu', figure = fig)
 			]),
 
 			html.Div([
@@ -286,35 +286,35 @@ def update_score(selected_sk_id, montant_souhaite, revenu):
 
 	return score
 
+
+
 # Affichage de la tranche d'age du RangeSlider
 @app.callback(Output('output_RangeSlider_age', 'children'),
               [Input('RangeSlider_age', 'value')])
 def show_rng_slider_max_min(numbers):
     if numbers is None:
         raise PreventUpdate
-    return 'Age : de ' + ' à: '.join([str(numbers[0]), str(numbers[-1])])
+    return 'Age : de ' + ' à '.join([str(numbers[0]), str(numbers[-1])])
 
 # MAJ Histogramme Revenu
 @app.callback(Output('hist_revenu', 'figure'),
               [Input('RangeSlider_age', 'value'), Input('sk_id', 'value')])
 def update_figure(numbers, sk_id):
     filtered_df_3 = data_dash.loc[(data_dash['AGE'] > numbers[0]) & (data_dash['AGE'] < numbers[-1])]
-    fig = px.histogram(filtered_df_3, x="AMT_INCOME_TOTAL", title='Histogramme des revenus', labels={'AMT_INCOME_TOTAL':'Revenu'})
+    fig = px.histogram(filtered_df_3, x="AMT_INCOME_TOTAL", title='Histogramme des revenus', labels={'AMT_INCOME_TOTAL':'Revenu'}, color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
     fig.add_shape(
     	go.layout.Shape(
     		type='line', 
     		xref='x', 
-    		yref='y',
+    		yref='paper',
             x0=data_dash.loc[data_dash['SK_ID_CURR'] == sk_id, 'AMT_INCOME_TOTAL'].values[0], 
             y0=0, 
             x1=data_dash.loc[data_dash['SK_ID_CURR'] == sk_id, 'AMT_INCOME_TOTAL'].values[0], 
-            y1=400, 
-            line={'dash': 'dash'}),
+            y1=0.95, 
+            line={'dash': 'dash', 'color':"#0000CD"}),
     )
 
     return fig
-
-
 
 
 # MAJ Histogramme Anciennete
@@ -322,11 +322,18 @@ def update_figure(numbers, sk_id):
               [Input('RangeSlider_age', 'value')])
 def update_figure(numbers):
     filtered_df_2 = data_dash.loc[(data_dash['AGE'] > numbers[0]) & (data_dash['AGE'] < numbers[-1])]
-    fig = px.histogram(filtered_df_2, x="DAYS_EMPLOYED_YEARS", title='Histogramme de l\'ancienneté', labels={'DAYS_EMPLOYED_YEARS':'Ancienneté (année)'})
-    #fig.add_shape(
-    #go.layout.Shape(type='line', xref='x', yref='paper',
-    #                x0=data_dash.loc[data_dash['SK_ID_CURR'] == , ], y0=0, x1=0, y1=20000, line={'dash': 'dash'}),
-    #)
+    fig = px.histogram(filtered_df_2, x="DAYS_EMPLOYED_YEARS", title='Histogramme de l\'ancienneté', labels={'DAYS_EMPLOYED_YEARS':'Ancienneté (année)'}, color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
+    fig.add_shape(
+    	go.layout.Shape(
+    		type='line', 
+    		xref='x', 
+    		yref='paper',
+            x0=data_dash.loc[data_dash['SK_ID_CURR'] == sk_id, 'DAYS_EMPLOYED_YEARS'].values[0], 
+            y0=0, 
+            x1=data_dash.loc[data_dash['SK_ID_CURR'] == sk_id, 'DAYS_EMPLOYED_YEARS'].values[0], 
+            y1=0.95, 
+            line={'dash': 'dash', 'color':"#0000CD"}),
+    )
 
     return fig
 
