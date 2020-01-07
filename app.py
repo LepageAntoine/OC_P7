@@ -11,8 +11,20 @@ import pickle
 
 import pandas as pd
 
+# --- LOADS ---
+
 data_dash = pd.read_csv('data/data_dash.csv')
 credit_balance = pd.read_csv('data/credit_card_balance.csv')
+# load the scoring-model from disk
+loaded_model = pickle.load(open('data/finalized_model.sav', 'rb'))
+
+# load the vectors for modelisation
+model_test = pd.read_csv('data/model_test.csv', index_col=0)
+
+# load the model_test with predictions
+model_test_with_predictions = pd.read_csv('data/model_test_with_predictions.csv', index_col=0)
+
+
 
 # Réduction du nombre de clients dans la base pour accélerer le dashboard en en gardant que les clients présents dans credit_card_balance
 data_dash = data_dash.loc[data_dash['SK_ID_CURR'].isin(credit_balance['SK_ID_CURR'].unique())]
@@ -41,17 +53,14 @@ sk_id = data_dash['SK_ID_CURR'].unique()
 fig = px.histogram(data_dash, x="AMT_INCOME_TOTAL", color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
 fig_2 = px.histogram(data_dash, x="DAYS_EMPLOYED_YEARS", color_discrete_sequence=['#a81e1e'], template="plotly_white", nbins=20)
 
-# load the scoring-model from disk
-loaded_model = pickle.load(open('C:/Users/Yop1001/Documents/Cours OC/Parcours Data Scientist/Projet 7 - Implémentez un modèle de scoring/finalized_model.sav', 'rb'))
 
-# load the vectors for modelisation
-final_df_modelisation = pd.read_csv('C:/Users/Yop1001/Documents/Cours OC/Parcours Data Scientist/Projet 7 - Implémentez un modèle de scoring/04 - Dashboards/data/final_df_modelisation.csv', index_col=0)
 
 
 #external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 app = dash.Dash()
+#app.config.suppress_callback_exceptions = True
 
 app.layout = html.Div([
 	
@@ -157,7 +166,13 @@ app.layout = html.Div([
 		html.Div([
 
 			html.Div([
-				html.H2('Calcul de la notation'),
+				html.H2('Notation du prêt souhaité'),
+				html.H3(id='score')
+			]),	
+
+			
+			html.Div([
+				html.H2('Simulateur de notation de prêt'),
 			]),	
 
 			html.Div([
@@ -183,9 +198,12 @@ app.layout = html.Div([
 			]),	
 			
 			html.Div([
-				html.H2('Notation'),
-				html.H3(id='score')
-			])
+				html.H3('Notation'),
+				html.H3(id='score_simu')
+			]),
+
+			html.Div(id='input_revenu_2'),	
+
 
 		], className="pretty_container one-third column"),	
 
@@ -274,15 +292,40 @@ def update_figure(selected_sk_id):
 
 # MAJ du score
 @app.callback(Output('score', 'children'),
+              [Input('sk_id', 'value')])
+def show_score(selected_sk_id):
+	score_init = model_test_with_predictions.loc[(model_test_with_predictions.index == selected_sk_id), 'TARGET_SCORE']
+	score_init = score_init.round(3)
+
+	return score_init
+
+
+# Input revenu
+#@app.callback(Output('input_revenu_2', 'children'),
+#              [Input('sk_id', 'value')])
+#def make_input(selected_sk_id):
+#	value = data_dash.loc[data_dash['SK_ID_CURR'] == selected_sk_id, 'AMT_CREDIT_WANTED'].values[0]
+
+#	return dcc.Input(
+#	    id='input_revenu_3',
+#	    placeholder='Enter a value...',
+#	    type='number',
+#	    value=value
+#	) 
+
+# lire : https://dash.plot.ly/sharing-data-between-callbacks
+
+# MAJ du score
+@app.callback(Output('score_simu', 'children'),
               [Input('sk_id', 'value'), Input('input_montant_souhaite', 'value'), Input('input_revenu', 'value')])
 def update_score(selected_sk_id, montant_souhaite, revenu):
-	vector = final_df_modelisation.loc[(final_df_modelisation.index == selected_sk_id)]
+	vector = model_test.loc[(model_test.index == selected_sk_id)]
 	vector.loc[:, 'AMT_CREDIT'] = montant_souhaite
 	vector.loc[:, 'AMT_INCOME_TOTAL'] = revenu
 
 	score = loaded_model.predict_proba(vector.values)
 	score = score[0][1]
-	score = score.round(2)
+	score = score.round(3)
 
 	return score
 
